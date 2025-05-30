@@ -18,14 +18,25 @@ class WifiInterface(WifiBase):
     
     def enable_monitor_mode(self):
         self.log_message("Enabling Monitor Mode...") #WAG MONG SUSUBUKAN SA SM PLS
-        self.run_cmd(f"ifconfig {self.interface} down")
-        self.run_cmd(f"iwconfig {self.interface} mode monitor")
-        self.run_cmd(f"ifconfig {self.interface} up")
-        self.log_message(f"{self.interface} is now in monitor mode.")
+        try:
+            self.run_cmd(f"ifconfig {self.interface} down")
+            self.run_cmd(f"iwconfig {self.interface} mode monitor")
+            self.run_cmd(f"ifconfig {self.interface} up")
+            self.log_message(f"{self.interface} is now in monitor mode.")
+        except Exception as error:
+            self.log_message(f"Failed to enable monitor mode due to {error}")
         
     def disable_monitor_mode(self):
         self.log_message("Disabling Monitor Mode...") #WAG MONG SUSUBUKAN SA SM PLS
-        self.run_cmd(f"ifconfig {self.interface} down")
-        self.run_cmd(f"iwconfig {self.interface} mode monitor")
-        self.run_cmd(f"ifconfig {self.interface} up")
-        self.log_message(f"{self.interface} is now in managed mode.")
+        try:
+            self.run_cmd(f"ifconfig {self.interface} down")
+            self.run_cmd(f"iwconfig {self.interface} mode monitor")
+            self.run_cmd(f"ifconfig {self.interface} up")
+            self.log_message(f"{self.interface} is now in managed mode.")
+        except Exception as error:
+            self.log_message(f"Failed to disable monitor mode due to {error}")
+    
+    def reset_mode(self):
+        if self.original_mode == "monitor":
+            return self.enable_monitor_mode()
+        return self.disable_monitor_mode()
