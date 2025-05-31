@@ -6,18 +6,20 @@ from wifi_base import WifiBase
 class WPACracker(WifiBase):
     def __init__(self, interface='wlan0', debug=False, wordlist_path=None):
         super().__init__(interface, debug)
-        self.wordlist = wordlist_path or self._find_default_wordlist()
+        self.wordlist = wordlist_path or self.find_default_wordlist()
         if not self.wordlist:
             raise FileNotFoundError("No suitable wordlist found for cracking.")
         self.results_file = None 
         
-    def _find_default_wordlist(self):
+    def find_default_wordlist(self):
         """Locate a suitable default wordlist if none specified."""
         common_paths = [
             "/usr/share/wordlists/rockyou.txt",
             "/usr/share/wordlists/rockyou.txt.gz",
             "/usr/share/dict/wordlist-probable.txt",
-            "/opt/wordlists/rockyou.txt"
+            "/opt/wordlists/rockyou.txt",
+            "/usr/share/john/password.lst",
+            "/pentest/passwords/wordlists/rockyou.txt"
         ]
         
         for path in common_paths:
@@ -35,7 +37,10 @@ class WPACracker(WifiBase):
         
         self.log_message("Converting capture to .hc22000 using hcxpcapngtool...")
         
-        output_file = f"{os.path.splitext(pcap_file)[0]}.hc22000"
+        output_file = os.path.join(
+            os.path.dirname(pcap_file),
+            f"{os.path.splitext(os.path.basename(pcap_file))[0]}.hc22000"
+            )
         cmd = ["hcxpcapngtool", "-o", output_file, pcap_file]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         

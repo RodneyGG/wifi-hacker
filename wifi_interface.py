@@ -30,7 +30,7 @@ class WifiInterface(WifiBase):
         self.log_message("Disabling Monitor Mode...") #WAG MONG SUSUBUKAN SA SM PLS
         try:
             self.run_cmd(f"ifconfig {self.interface} down")
-            self.run_cmd(f"iwconfig {self.interface} mode monitor")
+            self.run_cmd(f"iwconfig {self.interface} mode managed")
             self.run_cmd(f"ifconfig {self.interface} up")
             self.log_message(f"{self.interface} is now in managed mode.")
         except Exception as error:

@@ -10,22 +10,29 @@ class WifiScanner(WifiBase):
         self.log_message(f"Scanning for WPA/WPA2 networks for {scan_duration} seconds...")
         
         #delete previous scan to start fresh
-        self.clean_up_files([
-            "scan-01.csv", 
-            "scan-01.kismet.csv", 
-            "scan-01.log.csv"
-        ])
+        delete_files = ["scan-01.csv", "scan-01.kismet.csv", "scan-01.log.csv"]
+        
+        for pattern in delete_files:
+            try:
+                if os.path.exists(pattern):
+                    os.unlink(pattern)
+            except Exception as error:
+                self.log_message(f"Failed to remove {pattern}: {str(error)}", 'warning')
         
         #start scanning for networks
         scan_cmd = f"airodump-ng {self.interface} --write scan --output-format csv"
         
         scan_process = subprocess.Popen(
-            scan_cmd,
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            preexec_fn=os.setsid
-        )
+                    scan_cmd,
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid
+                    )
+    
+        if not scan_process.pid:
+            self.log_message("Failed to start scan process", 'error')
+            return None
         #wait for the scan duration to complete
         time.sleep(scan_duration)
         

@@ -16,7 +16,7 @@ class CaptureHandshake(WifiBase):
         if not self.set_interface_channel(channel):
             return None
 
-        capture_file = self._start_capture(bssid, channel)
+        capture_file = self.start_capture(bssid, channel)
         if not capture_file:
             return None
 
