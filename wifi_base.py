@@ -59,4 +59,13 @@ class WifiBase:
     
     def log_message(self, message, level="info"):
         getattr(self.logger, level)(message)
-        
+    
+    #clean up files after used
+    def clean_up_files(self, file_pattern):
+        for pattern in file_pattern:
+            try:
+                if os.path.exists(pattern):
+                    os.remove(pattern)
+            except Exception as error:
+                self.logger.warning(f"Failed to remove {pattern}: {str(error)}")
+                
