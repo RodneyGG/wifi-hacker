@@ -20,7 +20,7 @@ class CaptureHandshake(WifiBase):
         if not capture_file:
             return None
 
-        self.send_deauth_packets(bssid, deauth_packets)
+        self._send_deauth_packets(bssid, deauth_packets)
         
         #wait for the handshake
         self.log_message(f"Capturing for {capture_duration} seconds...")
@@ -30,7 +30,7 @@ class CaptureHandshake(WifiBase):
         self.stop_capture()
         
         #verify the handshake
-        if self.verify_handshake(capture_file):
+        if self._verify_handshake(capture_file):
             self.log_message("Successfully captured handshake!")
             return capture_file
         
@@ -60,7 +60,7 @@ class CaptureHandshake(WifiBase):
         time.sleep(3)  # Allow capture to initialize
         return f"{self.capture_prefix}-01.cap"
             
-    def send_deauth_packets(self, bssid, count):
+    def _send_deauth_packets(self, bssid, count):
         #send deauth packets
         self.log_message(f"Sending {count} deauthentication packets...")
         try:
@@ -80,7 +80,7 @@ class CaptureHandshake(WifiBase):
         except Exception as error:
             self.log_message(f"Failed to send deauth packets: {str(error)}", 'error')
             
-    def verify_handshake(self, pcap_file):
+    def _verify_handshake(self, pcap_file):
         #Check if the capture file contains a valid handshake.
         if not os.path.exists(pcap_file):
             return False
