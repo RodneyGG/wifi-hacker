@@ -9,10 +9,11 @@ class WPACracker(WifiBase):
         self.wordlist = wordlist_path or self.find_default_wordlist()
         if not self.wordlist:
             raise FileNotFoundError("No suitable wordlist found for cracking.")
-        self.results_file = None 
+        self.results_file = None
+        self.hash_dir = "hashes" 
         
     def find_default_wordlist(self):
-        """Locate a suitable default wordlist if none specified."""
+        #most common wordlist that is pre-installed in kali linux
         common_paths = [
             "/usr/share/wordlists/rockyou.txt",
             "/usr/share/wordlists/rockyou.txt.gz",
@@ -30,6 +31,7 @@ class WPACracker(WifiBase):
         self.log_message("No suitable wordlist found", "error")
         return None
     
+    #convet the captured handshake using hashcat
     def convert_capture_to_hashcat(self, pcap_file):
         if not pcap_file or not os.path.exists(pcap_file):
             self.log_message("Invalid Pcap File", "error")   
@@ -38,9 +40,10 @@ class WPACracker(WifiBase):
         self.log_message("Converting capture to .hc22000 using hcxpcapngtool...")
         
         output_file = os.path.join(
-            os.path.dirname(pcap_file),
+            self.hash_dir,
             f"{os.path.splitext(os.path.basename(pcap_file))[0]}.hc22000"
-            )
+        )
+        
         cmd = ["hcxpcapngtool", "-o", output_file, pcap_file]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
@@ -66,7 +69,7 @@ class WPACracker(WifiBase):
         
         #show time stamp for each crack 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.results_file = f"cracked_results_{timestamp}.txt"
+        self.results_file = os.path.join(self.hash_dir, f"cracked_results_{timestamp}.txt")
         
         self.log_message(f"Starting Hashcat attack with wordlist: {self.wordlist}")
         
@@ -88,8 +91,8 @@ class WPACracker(WifiBase):
             else:
                 self.log_message("Hashcat completed but results file is empty", "error")
                 return False
-        except subprocess.CalledProcessError as e:
-            self.log_message(f"Hashcat failed: {e}", "error")
+        except subprocess.CalledProcessError as error:
+            self.log_message(f"Hashcat failed: {error}", "error")
             return False
         
     def extract_password(self):

