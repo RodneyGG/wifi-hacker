@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import logging
 import subprocess
 from credential_logger import CredentialLogger
 from handshake_capturer import CaptureHandshake
@@ -11,6 +12,15 @@ from wifi_scanner import WifiScanner
 
 
 class WifiHacker:
+    common_wordlist = [
+        "/usr/share/wordlists/rockyou.txt",
+        "/usr/share/wordlists/rockyou.txt.gz",
+        "/usr/share/dict/wordlist-probable.txt",
+        "/opt/wordlists/rockyou.txt",
+        "/usr/share/john/password.lst",
+        "/pentest/passwords/wordlists/rockyou.txt"
+    ]
+    
     def __init__(self, interface='wlan0', wordlist=None, debug=False):
         self.interface = interface
         self.debug = debug
@@ -27,7 +37,7 @@ class WifiHacker:
             sys.stderr.write(f"Warning: Specified wordlist not found: {wordlist_path}\n")
         
         # Try common locations
-        for wordlist in self.COMMON_WORDLISTS:
+        for wordlist in self.common_wordlist:
             if os.path.exists(wordlist):
                 sys.stdout.write(f"Using default wordlist: {wordlist}\n")
                 return wordlist
