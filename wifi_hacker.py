@@ -4,11 +4,11 @@ import sys
 import argparse
 import logging
 import subprocess
-from credential_logger import CredentialLogger
-from handshake_capturer import CaptureHandshake
-from wpa_cracker import WPACracker
-from wifi_interface import WifiInterface
-from wifi_scanner import WifiScanner
+from modules.credential_logger import CredentialLogger
+from modules.handshake_capturer import CaptureHandshake
+from modules.wpa_cracker import WPACracker
+from modules.wifi_interface import WifiInterface
+from modules.wifi_scanner import WifiScanner
 
 
 class WifiHacker:
