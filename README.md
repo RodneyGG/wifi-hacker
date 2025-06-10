@@ -12,7 +12,9 @@
 
 ## Overview
 
-`wifi_hacker.py` is a Python-based tool designed to automate the process of scanning for Wi-Fi networks, capturing WPA/WPA2 handshakes, and attempting to crack the Wi-Fi password using a wordlist. It leverages popular tools like `airodump-ng`, `hcxpcapngtool`, and `hashcat` under the hood.
+ Wifi Hacker is a Python-based tool designed to automate the process of scanning for Wi-Fi networks, capturing WPA/WPA2 handshakes, and attempting to crack the Wi-Fi password using a wordlist. It leverages popular tools like `airodump-ng`, `hcxpcapngtool`, and `hashcat` under the hood.
+
+ This tool abuses leaked password lists like `rockyou.txt` to try and decrypt the captured handshake. If the Wi-Fi password is weak or commonly used, it might get cracked fast. This is a good way to learn how important strong passwords really are.
 
 ---
 
@@ -146,6 +148,15 @@ sudo python3 main.py -i wlan1 -w /usr/share/wordlists/rockyou.txt -d
 - For wordlist errors, ensure the path is correct and file is readable.
 
 ---
+This program was created by **Lloyd Rodney Arevalo** strictly for educational purposes only.
+
+The creator does not condone or support any form of illegal activity, including unauthorized access to Wi-Fi networks or systems.
+
+✅ Always obtain proper permission before attempting any form of testing or hacking.
+✅ You are solely responsible for how you use this tool.
+
+Use this tool only on your own networks or with explicit consent from the network owner.
+
 
 **Use responsibly!**
 
