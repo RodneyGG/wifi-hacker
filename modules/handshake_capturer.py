@@ -32,9 +32,10 @@ class CaptureHandshake(WifiBase):
         os.killpg(os.getpgid(scan_proc.pid), signal.SIGTERM)
         csv_file = f"{scan_prefix}-01.csv"
         channel = None
+        
         if os.path.exists(csv_file):
-            with open(csv_file) as f:
-                for line in f:
+            with open(csv_file) as file:
+                for line in file:
                     if target_bssid.upper() in line.upper():
                         parts = line.split(",")
                         if len(parts) > 3:
@@ -44,6 +45,7 @@ class CaptureHandshake(WifiBase):
                 os.remove(csv_file)
             except Exception:
                 pass
+            
         if channel:
             self.log_message(f"BSSID {target_bssid} found on channel {channel}.")
         else:
@@ -57,19 +59,22 @@ class CaptureHandshake(WifiBase):
             if not channel:
                 self.log_message(f"BSSID {bssid} not found. Aborting handshake capture.", "error")
                 return None
+            
         if not self.set_interface_channel(channel):
             self.log_message("Failed to set interface channel.", "error")
             return None
         self.capture_prefix = f"capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         capture_file = self.start_capture(bssid, channel)
+        
         if not capture_file:
             self.log_message("Failed to start capture process.", "error")
             return None
-        self._start_deauth_thread(bssid, deauth_packets, deauth_interval)
         self.log_message(f"Capturing for {capture_duration} seconds...")
+        self._start_deauth_thread(bssid, deauth_packets, deauth_interval)
         time.sleep(capture_duration)
         self.stop_capture()
         self._stop_deauth_thread()
+        
         # Robust handshake verification!
         status = self._verify_handshake_smart(capture_file, bssid)
         if status.success:
@@ -201,7 +206,9 @@ class CaptureHandshake(WifiBase):
             self.log_message("No beacon frames found in capture. Trying handshake check without -b option.")
             found = self._verify_handshake_with_aircrack(cap_file, bssid=None, wordlist=wordlist)
             return HandshakeStatus(found, "No beacon, checked without BSSID", False, found, found)
+        
         found = self._verify_handshake_with_aircrack(cap_file, bssid=target_bssid, wordlist=wordlist)
+        
         if found:
             return HandshakeStatus(True, "Handshake or PMKID detected", True, True, True)
         else:

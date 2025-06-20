@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import argparse
 import logging
 import subprocess
 from modules.credential_logger import CredentialLogger
@@ -153,53 +152,3 @@ class WifiHacker:
             "cracked_results_*.txt"
         ])
         sys.stdout.write("Cleanup complete\n")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="WPA/WPA2 Network Cracker - For Educational and Authorized Testing Only",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument('-i', '--interface', 
-                    default='wlan0',
-                    help='Wireless interface to use (default: %(default)s)')
-    parser.add_argument('-w', '--wordlist',
-                    help='Path to wordlist file (default: auto-detected from common locations)')
-    parser.add_argument('-d', '--debug',
-                    action='store_true',
-                    help='Enable verbose debug output')
-    
-    try:
-        args = parser.parse_args()
-        
-        if not os.path.exists(f'/sys/class/net/{args.interface}'):
-            sys.stderr.write(f"Error: Interface {args.interface} not found\n")
-            sys.exit(1)
-            
-        # Additional wordlist validation if specified
-        if args.wordlist and not os.path.isfile(args.wordlist):
-            sys.stderr.write(f"Error: Wordlist file not found: {args.wordlist}\n")
-            sys.exit(1)
-
-        print("""
-        WARNING: This tool is for educational purposes and authorized penetration testing only.
-        Unauthorized use may violate laws and regulations. Use only on networks you own or have permission to test.
-        WALANG KASALANAN SI LLOYD AREVALO PAG MAY GINAWA KANG MASAMA
-        """)
-        
-        hacker = WifiHacker(
-            interface=args.interface,
-            wordlist=args.wordlist,
-            debug=args.debug
-        )
-        hacker.execute()
-        
-    except KeyboardInterrupt:
-        print("\n[!] Operation cancelled by user")
-        sys.exit(0)
-    except Exception as e:
-        sys.stderr.write(f"\n[!] Fatal error: {str(e)}\n")
-        if args.debug:
-            import traceback
-            traceback.print_exc()
-        sys.exit(1)

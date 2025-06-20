@@ -1,5 +1,4 @@
 from modules.wifi_base import WifiBase
-import time
 
 class WifiInterface(WifiBase):
     def __init__(self, interface="wlan0", debug=False):
