@@ -21,10 +21,12 @@ class WifiHacker:
         "/pentest/passwords/wordlists/rockyou.txt"
     ]
     
-    def __init__(self, interface='wlan0', wordlist=None, debug=False):
+    def __init__(self, interface='wlan0', wordlist=None, debug=False, ssid=None, bssid=None):
         self.interface = interface
         self.debug = debug
         self.wordlist = self.validate_wordlist(wordlist)  
+        self.ssid = ssid      
+        self.bssid = bssid    
         self.validate_root()  
         self.check_required_tools()  
         self.initialize_components()  
@@ -83,7 +85,8 @@ class WifiHacker:
             self.wifi_interface.enable_monitor_mode()
             
             # 2. Scan for networks (using WifiScanner)
-            target = self.wifi_scanner.scan_networks()
+            target = self.wifi_scanner.scan_networks(target_ssid=self.ssid, target_bssid=self.bssid  )
+            
             if not target:
                 return self._clean_up("No networks found", error=True)
             

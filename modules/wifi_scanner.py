@@ -3,10 +3,10 @@ import subprocess
 import csv
 import time
 import signal
-from wifi_base import WifiBase
+from modules.wifi_base import WifiBase
 
 class WifiScanner(WifiBase):
-    def scan_networks(self, scan_duration=10):
+    def scan_networks(self, scan_duration=10, target_ssid=None, target_bssid=None):
         self.log_message(f"Scanning for WPA/WPA2 networks for {scan_duration} seconds...")
         
         #delete previous scan to start fresh
@@ -39,30 +39,49 @@ class WifiScanner(WifiBase):
         #terminate process
         os.killpg(os.getpgid(scan_process.pid), signal.SIGTERM)
         
-        return self.analyze_scan_results()
+        return self.analyze_scan_results(target_ssid=target_ssid, target_bssid=target_bssid)
         
-    def analyze_scan_results(self):
+    def analyze_scan_results(self, target_ssid=None, target_bssid=None):
         #identify which is the strongest network
         try:
             with open("scan-01.csv", newline='') as csv_file:
                 csv_reader = csv.reader(csv_file)
-                best_network = None
+                best_network = None 
                 strongest_signal = -999 
                 
                 for row in csv_reader:
                     if self.is_valid_wpa_network(row):
+                        ssid = row[13].strip()
+                        bssid = row[0].strip()
                         try:
                             signal_strength = int(row[8].strip())
-                            if signal_strength > strongest_signal:
-                                strongest_signal = signal_strength
-                                best_network = {
-                                    'bssid': row[0].strip(),
-                                    'channel': row[3].strip(),
-                                    'ssid': row[13].strip(),
-                                    'power': signal_strength
-                                }
                         except (ValueError, IndexError):
                             continue
+
+                        # Prefer user-specified BSSID or SSID
+                        if target_bssid and bssid == target_bssid:
+                            return {
+                                'bssid': bssid,
+                                'channel': row[3].strip(),
+                                'ssid': ssid,
+                                'power': signal_strength
+                            }
+                        if target_ssid and ssid == target_ssid:
+                            return {
+                                'bssid': bssid,
+                                'channel': row[3].strip(),
+                                'ssid': ssid,
+                                'power': signal_strength
+                            }
+                        # Fallback to strongest signal
+                        if signal_strength > strongest_signal:
+                            strongest_signal = signal_strength
+                            best_network = {
+                                'bssid': bssid,
+                                'channel': row[3].strip(),
+                                'ssid': ssid,
+                                'power': signal_strength
+                            }
                 
                 if best_network:
                     self.log_message(f"Found target network: {best_network['ssid']}")

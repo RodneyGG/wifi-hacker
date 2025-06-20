@@ -1,4 +1,4 @@
-from wifi_base import WifiBase
+from modules.wifi_base import WifiBase
 import time
 
 class WifiInterface(WifiBase):

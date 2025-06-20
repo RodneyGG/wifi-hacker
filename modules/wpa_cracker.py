@@ -1,7 +1,7 @@
 import os
 import subprocess
 from datetime import datetime
-from wifi_base import WifiBase
+from modules.wifi_base import WifiBase
 
 class WPACracker(WifiBase):
     def __init__(self, interface='wlan0', debug=False, wordlist_path=None):
@@ -24,6 +24,10 @@ class WPACracker(WifiBase):
         
         for path in common_paths:
             if os.path.exists(path):
+                # check if .gz and skip, hashcat can't use compressed wordlists directly
+                if path.endswith('.gz'):
+                    self.log_message(f"Wordlist {path} is gzipped. Please decompress before using.", "error")
+                    continue
                 self.log_message(f"Found default wordlist: {path}")
                 return path
                 
@@ -81,15 +85,19 @@ class WPACracker(WifiBase):
         ]
         
         try:
-            subprocess.run(hashcat_command, check=True)
+            result = subprocess.run(hashcat_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if os.path.exists(self.results_file) and os.path.getsize(self.results_file) > 0:
                 self.log_message(f"Hashcat finished. Results saved to {self.results_file}")
                 return True
             else:
                 self.log_message("Hashcat completed but results file is empty", "error")
+                if result.stderr:
+                    self.log_message(result.stderr.decode().strip(), "error")
                 return False
         except subprocess.CalledProcessError as e:
             self.log_message(f"Hashcat failed: {e}", "error")
+            if hasattr(e, 'stderr') and e.stderr:
+                self.log_message(e.stderr.decode().strip(), "error")
             return False
         
     def extract_password(self):

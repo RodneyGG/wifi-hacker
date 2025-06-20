@@ -9,6 +9,8 @@ class WifiCrackerApp:
         self.interface = "wlan0"
         self.wordlist = None
         self.debug = False
+        self.ssid = None
+        self.bssid = None
         
     def parse_arguments(self):
         parser = argparse.ArgumentParser(
@@ -23,6 +25,10 @@ class WifiCrackerApp:
         parser.add_argument('-d', '--debug',
                         action='store_true',
                         help='Enable verbose debug output')
+        parser.add_argument('--ssid',              
+                            help='Target network SSID')
+        parser.add_argument('--bssid',             
+                            help='Target network BSSID')
         
         args = parser.parse_args()
         
@@ -39,7 +45,9 @@ class WifiCrackerApp:
         self.interface = args.interface
         self.wordlist = args.wordlist
         self.debug = args.debug
-    
+        self.ssid = args.ssid       
+        self.bssid = args.bssid     
+        
     def display_warning(self):
         """Show legal disclaimer"""
         print("""
@@ -57,15 +65,17 @@ class WifiCrackerApp:
             hacker = WifiHacker(
                 interface=self.interface,
                 wordlist=self.wordlist,
-                debug=self.debug
+                debug=self.debug,
+                ssid=self.ssid,      
+                bssid=self.bssid     
             )
             hacker.execute()
             
         except KeyboardInterrupt:
             print("\n[!] Operation cancelled by user")
             sys.exit(0)
-        except Exception as e:
-            sys.stderr.write(f"\n[!] Fatal error: {str(e)}\n")
+        except Exception as error:
+            sys.stderr.write(f"\n[!] Fatal error: {str(error)}\n")
             if self.debug:
                 import traceback
                 traceback.print_exc()
